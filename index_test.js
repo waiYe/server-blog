@@ -54,6 +54,13 @@ app.get('/api/getArticle/:id_blog', (req, res) => {
 	const id_blog = req.params.id_blog
 	Blog.find({ "_id": id_blog }, (err, ret) => {
 		if (err) console.log('查询失败', err)
+		if(!ret[0]) {
+			return res.status(200).json({
+				err_code: 404,
+				message: '没有找到博客'
+			})
+		}
+		ret[0].create_time = myLib.getDateFormat("yyyy-MM-dd hh:mm:ss", parseInt(ret[0].create_time))
 		res.json(ret)
 	})
 })
@@ -98,20 +105,44 @@ app.post('/api/blog/updateArticle/:id_blog', (req, res) => {
 })
 
 //根据id删除blog数据
-app.get('/api/blog/deleteArticle/:id_blog', (req, res) => {
-	const id_blog = req.params.id_blog
-	Blog.deleteMany({ "_id": id_blog }, (err, ret) => {
-		if (err) {
-			return res.status(500).json({
+app.post('/api/blog/deleteArticle/', (req, res) => {
+	const id_blog = req.body.id_blog
+	const id_user = req.body.id_user
+	let author_id = ''
+
+	if(!id_blog || !id_user){
+		res.status(401)
+		return res.end('用户未登录')
+	}
+
+
+	Blog.find({ "_id": id_blog }, (err, ret) => {
+		if (err) console.log('查询失败', err)
+		author_id = ret[0].id_author
+	})
+	.then(()=>{
+		if(author_id !== id_user) {
+			return res.status(500).send({
 				err_code: 500,
-				message: err.message
+				message: '该博客不属于该用户'
 			})
 		}
-		return res.status(200).json({
-			err_code: 0,
-			message: 'Blog 删除成功'
+		Blog.deleteMany({ "_id": id_blog }, (err, ret) => {
+			if (err) {
+				return res.status(500).json({
+					err_code: 500,
+					message: err.message
+				})
+			}
+			return res.status(200).json({
+				err_code: 0,
+				message: 'Blog 删除成功'
+			})
 		})
 	})
+
+
+
 })
 
 //--------评论接口---------

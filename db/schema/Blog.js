@@ -13,24 +13,19 @@ const blogSchema = new Schema({
         type: String,
         required: true
     },
-    "marked_article": {
-        type: String,
-        required: false,
-        default: "default_MarkDown_article"
-    },
     "blog_title": {
         type: String,
         required: true
     },
-    "id_tag": {
+    "blog_type": {
+        type: Array,
+        required: true
+    },
+    "author_name": {
         type: String,
         required: true
     },
-    "id_comment": {
-        type: String,
-        required: true
-    },
-    "id_user": {
+    "id_author": {
         type: String,
         required: true
     }

@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
 
+const salt = 'userTest'
+
 //检查token是否过期
 module.exports =  ( req, res, next ) => {
   //拿到token
