@@ -71,7 +71,6 @@ app.post('/api/addArticle', (req, res) => {
 
 //修改blog的数据
 app.post('/api/blog/updateArticle/:id_blog', (req, res) => {
-	console.log(req.body)
 	Blog.updateMany(
 		{ "_id": req.body._id },
 		{

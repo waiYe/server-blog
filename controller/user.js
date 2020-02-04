@@ -20,7 +20,6 @@ const findUser = (username) => {
       if(err) {
         reject(err)
       }
-      console.log(username)
       resolve(doc)
     })
   })
