@@ -23,6 +23,10 @@ const commentSchema = new Schema({
     type: String,
     required: true
   },
+  // "avatar": { //为了解决不能添加属性，不会真正的存数据进去
+  //   type: String,
+  //   required: false
+  // },
   "comment_user_id": {
     type: String,
     required: false

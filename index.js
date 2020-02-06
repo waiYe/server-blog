@@ -26,7 +26,7 @@ app.all('*', function (req, res, next) {
 	res.header('Access-Control-Allow-Headers', 'authorization,Content-Type');
 	res.header('Access-Control-Allow-Methods', '*');
 	res.header('Content-Type', 'application/json;charset=utf-8');
-	if(req.method === 'OPTIONS') {
+	if (req.method === 'OPTIONS') {
 		return res.end('OK')
 	}
 	next();
@@ -54,7 +54,7 @@ app.get('/api/getArticle/:id_blog', (req, res) => {
 	const id_blog = req.params.id_blog
 	Blog.find({ "_id": id_blog }, (err, ret) => {
 		if (err) console.log('查询失败', err)
-		if(!ret[0]) {
+		if (!ret[0]) {
 			return res.status(200).json({
 				err_code: 404,
 				message: '没有找到博客'
@@ -109,7 +109,7 @@ app.post('/api/blog/deleteArticle/', (req, res) => {
 	const id_user = req.body.id_user
 	let author_id = ''
 
-	if(!id_blog || !id_user){
+	if (!id_blog || !id_user) {
 		res.status(401)
 		return res.end('用户未登录')
 	}
@@ -119,26 +119,26 @@ app.post('/api/blog/deleteArticle/', (req, res) => {
 		if (err) console.log('查询失败', err)
 		author_id = ret[0].id_author
 	})
-	.then(()=>{
-		if(author_id !== id_user) {
-			return res.status(500).send({
-				err_code: 500,
-				message: '该博客不属于该用户'
-			})
-		}
-		Blog.deleteMany({ "_id": id_blog }, (err, ret) => {
-			if (err) {
-				return res.status(500).json({
+		.then(() => {
+			if (author_id !== id_user) {
+				return res.status(500).send({
 					err_code: 500,
-					message: err.message
+					message: '该博客不属于该用户'
 				})
 			}
-			return res.status(200).json({
-				err_code: 0,
-				message: 'Blog 删除成功'
+			Blog.deleteMany({ "_id": id_blog }, (err, ret) => {
+				if (err) {
+					return res.status(500).json({
+						err_code: 500,
+						message: err.message
+					})
+				}
+				return res.status(200).json({
+					err_code: 0,
+					message: 'Blog 删除成功'
+				})
 			})
 		})
-	})
 
 
 
@@ -148,7 +148,7 @@ app.post('/api/blog/deleteArticle/', (req, res) => {
 
 //发表评论
 app.post('/api/comment/addComment', (req, res) => {
-	if(!req.body.content) {
+	if (!req.body.content) {
 		return res.status(200).json({
 			err_code: 201,
 			message: '回复内容不能为空'
@@ -171,18 +171,72 @@ app.post('/api/comment/addComment', (req, res) => {
 //根据博客id，获取评论列表
 app.get('/api/comment/getCommentById/:id', (req, res) => {
 	const blog_id = req.params.id
-	Comment.find({blog_id}, (err, ret) => {
-		if (err) {
-			return res.status(500).json({
-				err_code: 500,
-				message: err.message
-			})
+
+Comment.aggregate([
+	{
+		$lookup: {
+			from: "users",
+			localField: "username",
+			foreignField: "user_name",
+			as: "comments_user"
 		}
-		ret.forEach(comment => {
-			comment.create_time = myLib.getDateFormat("yyyy-MM-dd hh:mm:ss", parseInt(comment.create_time))
-		});
-		res.send(ret)
+	},
+	{
+		$match: {
+			blog_id
+		}
+	},
+	{
+		$project: {
+			_id: 0,
+			user_id: 1,
+			blog_id: 1,
+			username: 1,
+			content: 1,
+			create_time: 1,
+			avatar: '$comments_user.avatar'
+		}
+	}
+], (err, data) => {
+	data.forEach(comment => {
+		comment.create_time = myLib.getDateFormat("yyyy-MM-dd hh:mm:ss", parseInt(comment.create_time))
 	})
+	return res.status(200).json(data)
+})
+
+// console.log(com)
+
+
+
+	// Comment.find({ blog_id }, (err, ret) => {
+	// 	if (err) {
+	// 		console.log(err.message)
+	// 	} else {
+	// 		ret.forEach(comment => {
+	// 			comment.create_time = myLib.getDateFormat("yyyy-MM-dd hh:mm:ss", parseInt(comment.create_time))
+	// 			User.find({ _id: comment.user_id }, (err, retUser) => {
+	// 				if (err) {
+	// 					// res.status(500).json({
+	// 					// 	err_code: 500,
+	// 					// 	message: err.message
+	// 					// })
+	// 					console.log(err.message)
+	// 				}
+	// 				comment.avatar = retUser[0].avatar
+	// 				// comments.push({
+	// 				// 	_id: comment._id,
+	// 				// 	user_id: comment.user_id,
+	// 				// 	blog_id: comment.blog_id,
+	// 				// 	username: comment.username,
+	// 				// 	content: comment.content,
+	// 				// 	create_time: comment.create_time,
+	// 				// 	avatar
+	// 				// })
+	// 				// comment.avatar = avatar
+	// 			})
+	// 		})
+	// 	}
+	// })
 })
 
 
@@ -190,11 +244,11 @@ app.get('/api/comment/getCommentById/:id', (req, res) => {
 
 //登录
 app.post('/api/login', (req, res) => {
-	
+
 	const username = req.body.user_name
 	const password = req.body.password
-	User.findOne({"user_name": username}, (err, doc) => {
-		if(err) {
+	User.findOne({ "user_name": username }, (err, doc) => {
+		if (err) {
 			return res.status(500).json({
 				err_code: 500,
 				message: err.message
@@ -205,18 +259,18 @@ app.post('/api/login', (req, res) => {
 				message: '找不到用户'
 			})
 		} else {
-			if(password !== doc.password) {
+			if (password !== doc.password) {
 				return res.status(200).json({
 					err_code: 2,
 					message: '密码错误'
 				})
-			}else {
+			} else {
 				//密码一致后，生成一个token，并保存到数据库中
 				const token = createToken(username)
 				doc.token = token
 				new Promise((resolve, reject) => {
 					doc.save((err) => { //保存到数据库
-						if(err) { reject(err) }
+						if (err) { reject(err) }
 						resolve()
 					})
 				})
@@ -226,7 +280,8 @@ app.post('/api/login', (req, res) => {
 					_id: doc._id,
 					user_name: username,
 					token,
-					create_time: doc.create_time
+					create_time: doc.create_time,
+					avatar: doc.avatar
 				})
 			}
 		}
@@ -251,14 +306,14 @@ app.post('/api/register', (req, res) => {
 
 //根据name查找用户
 app.get('/api/user/getUserByName/:name', (req, res) => {
-	User.find({user_name: req.params.name}, (err, ret) => {
+	User.find({ user_name: req.params.name }, (err, ret) => {
 		if (err) {
 			return res.status(500).json({
 				err_code: 500,
 				message: err.message
 			})
 		}
-		if(ret[0]){
+		if (ret[0]) {
 			return res.status(200).json({
 				err_code: 5,
 				message: '用户名已被注册'
@@ -269,6 +324,34 @@ app.get('/api/user/getUserByName/:name', (req, res) => {
 			message: '用户名可用'
 		})
 	})
+})
+
+app.post('/api/user/updateUserInfo/id_user=:id_user', (req, res) => {
+	if (req.body.avatar === "") {
+		return res.status(500).json({
+			err_code: 10,
+			message: '图片base64为空'
+		})
+	} else {
+		User.updateMany(
+			{ "_id": req.params.id_user },
+			{
+				$set: req.body
+			},
+			(err, ret) => {
+				if (err) {
+					return res.status(500).json({
+						err_code: 500,
+						message: err.message
+					})
+				}
+				return res.status(200).json({
+					err_code: 0,
+					message: 'User 修改成功'
+				})
+			}
+		)
+	}
 })
 
 //获取所有用户
